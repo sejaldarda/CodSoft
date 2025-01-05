@@ -1,0 +1,174 @@
+package project;
+import java.io.*;
+import java.util.*;
+public class StudentManagementSystem {
+
+	    static class Student {
+	        private String name;
+	        private String rollNumber;
+	        private String grade;
+	        private int age;
+	        private String address;
+
+	        public Student(String name, String rollNumber, String grade, int age, String address) {
+	            this.name = name;
+	            this.rollNumber = rollNumber;
+	            this.grade = grade;
+	            this.age = age;
+	            this.address = address;
+	        }	       
+	        public String getName() { return name; }
+	        public String getRollNumber() { return rollNumber; }
+	        public String getGrade() { return grade; }
+	        public int getAge() { return age; }
+	        public String getAddress() { return address; }
+
+	        @Override
+	        public String toString() {
+	            return "Name: " + name + ", Roll Number: " + rollNumber + ", Grade: " + grade + ", Age: " + age + ", Address: " + address;
+	        }
+	       
+	        public String toCSV() {
+	            return name + "," + rollNumber + "," + grade + "," + age + "," + address;
+	        }
+       
+	        public static Student fromCSV(String csv) {
+	            String[] data = csv.split(",");
+	            return new Student(data[0], data[1], data[2], Integer.parseInt(data[3]), data[4]);
+	        }
+	    }
+	    static class StudentSystem {
+	        private List<Student> students;
+	        private String storageFile;
+
+	        public StudentSystem(String storageFile) {
+	            this.storageFile = storageFile;
+	            this.students = new ArrayList<>();
+	            loadStudents();
+	        }
+	        public void addStudent(Student student) {
+	            students.add(student);
+	            saveStudents();
+	        }
+	        public boolean removeStudent(String rollNumber) {
+	            Student studentToRemove = findStudentByRollNumber(rollNumber);
+	            if (studentToRemove != null) {
+	                students.remove(studentToRemove);
+	                saveStudents();
+	                return true;
+	            }
+	            return false;
+	        }
+	        public Student findStudentByRollNumber(String rollNumber) {
+	            for (Student student : students) {
+	                if (student.getRollNumber().equals(rollNumber)) {
+	                    return student;
+	                }
+	            }
+	            return null;
+	        }
+	        public void displayAllStudents() {
+	            if (students.isEmpty()) {
+	                System.out.println("No students found.");
+	            } else {
+	                students.forEach(System.out::println);
+	            }
+	        }
+	        private void loadStudents() {
+	            try (BufferedReader reader = new BufferedReader(new FileReader(storageFile))) {
+	                String line;
+	                while ((line = reader.readLine()) != null) {
+	                    students.add(Student.fromCSV(line));
+	                }
+	            } catch (FileNotFoundException e) {
+	                System.out.println("No previous data found, starting fresh.");
+	            } catch (IOException e) {
+	                System.out.println("Error loading data.");
+	            }
+	        }
+	        private void saveStudents() {
+	            try (BufferedWriter writer = new BufferedWriter(new FileWriter(storageFile))) {
+	                for (Student student : students) {
+	                    writer.write(student.toCSV());
+	                    writer.newLine();
+	                }
+	            } catch (IOException e) {
+	                System.out.println("Error saving data.");
+	            }
+	        }
+	        public String validateInput(String prompt, String type) {
+	            Scanner scanner = new Scanner(System.in);
+	            String input;
+	            while (true) {
+	                System.out.print(prompt);
+	                input = scanner.nextLine().trim();
+
+	                if (type.equals("string") && !input.isEmpty()) {
+	                    return input;
+	                } else if (type.equals("int") && input.matches("\\d+")) {
+	                    return input;
+	                } else {
+	                    System.out.println("Invalid input, please try again.");
+	                }
+	            }
+	        }
+	        public void startUI() {
+	            Scanner scanner = new Scanner(System.in);
+	            while (true) {
+	                System.out.println("\nStudent Management System");
+	                System.out.println("1. Add a new student");
+	                System.out.println("2. Remove a student");
+	                System.out.println("3. Search for a student");
+	                System.out.println("4. Display all students");
+	                System.out.println("5. Exit");
+	                System.out.print("Enter your choice: ");
+	                String choice = scanner.nextLine();
+
+	                if (choice.equals("1")) {
+	                    String name = validateInput("Enter student's name: ", "string");
+	                    String rollNumber = validateInput("Enter roll number: ", "string");
+	                    String grade = validateInput("Enter grade: ", "string");
+	                    int age = Integer.parseInt(validateInput("Enter age: ", "int"));
+	                    String address = validateInput("Enter address: ", "string");
+
+	                    Student newStudent = new Student(name, rollNumber, grade, age, address);
+	                    addStudent(newStudent);
+
+	                } else if (choice.equals("2")) {
+	                    String rollNumber = validateInput("Enter roll number of student to remove: ", "string");
+	                    boolean removed = removeStudent(rollNumber);
+	                    if (removed) {
+	                        System.out.println("Student removed.");
+	                    } else {
+	                        System.out.println("Student not found.");
+	                    }
+
+	                } else if (choice.equals("3")) {
+	                    String rollNumber = validateInput("Enter roll number to search for: ", "string");
+	                    Student student = findStudentByRollNumber(rollNumber);
+	                    if (student != null) {
+	                        System.out.println(student);
+	                    } else {
+	                        System.out.println("Student not found.");
+	                    }
+
+	                } else if (choice.equals("4")) {
+	                    displayAllStudents();
+
+	                } else if (choice.equals("5")) {
+	                    System.out.println("Exiting...");
+	                    break;
+
+	                } else {
+	                    System.out.println("Invalid choice, please try again.");
+	                }
+	            }
+	        }
+	    }
+	    public static void main(String[] args) {
+	        StudentSystem system = new StudentSystem("students.csv");
+	        system.startUI();
+	    }
+	}
+
+	   
